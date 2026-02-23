@@ -11,8 +11,8 @@ int vfprintf(FILE *stream, const char *format, va_list ap)
 
       switch(*format)
       {
-        //case 's':
-          //syscall(SYSCALL_WRITE, );
+        case 's':
+          syscall(SYSCALL_WRITE, );
       }
     }
   }
