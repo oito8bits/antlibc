@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
 int vfprintf(FILE *stream, const char *format, va_list ap)
 {
-  va_list arg;
-  va_start(arg, format);
-  
+  int ret = 0;
+
   while(*format != '\0')
   {
     if(*format == '%')
@@ -12,10 +15,20 @@ int vfprintf(FILE *stream, const char *format, va_list ap)
       switch(*format)
       {
         case 's':
-          syscall(SYSCALL_WRITE, );
+          char *str = va_arg(ap, char *);
+          write(1, str, strlen(str));
+          break;
       }
     }
+    else
+    {
+      char ch = *format;
+      write(1, &ch, 1); 
+    }
+  
+    format++;
+    ret++;
   }
 
-  va_end(arg);
+  return ret;
 }
