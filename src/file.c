@@ -1,3 +1,4 @@
 #include <file.h>
 
-FILE stdout[] = {{.fd = 1}};
+FILE _stdin[] = {{.fd = 0}};
+FILE _stdout[] = {{.fd = 1}};
