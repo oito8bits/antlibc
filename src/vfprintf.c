@@ -5,7 +5,7 @@
 int vfprintf(FILE *stream, const char *format, va_list ap)
 {
   int ret = 0;
-
+  int fd = stream->fd;
   while(*format != '\0')
   {
     if(*format == '%')
@@ -16,14 +16,14 @@ int vfprintf(FILE *stream, const char *format, va_list ap)
       {
         case 's':
           char *str = va_arg(ap, char *);
-          write(1, str, strlen(str));
+          write(fd, str, strlen(str));
           break;
       }
     }
     else
     {
       char ch = *format;
-      write(1, &ch, 1); 
+      write(fd, &ch, 1); 
     }
   
     format++;
