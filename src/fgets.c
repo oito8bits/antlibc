@@ -3,5 +3,6 @@
 
 char *fgets(char *s, int size, FILE *stream)
 {
-  read(stream->fd, s, size);
+  size_t ret = read(stream->fd, s, size);
+  s[ret] = '\0';
 }

@@ -4,6 +4,7 @@
 typedef struct
 {
   unsigned fd;
+  void *buf;
 } FILE;
 
 #endif
