@@ -69,11 +69,23 @@ void int_to_ascii(char *src, unsigned long n)
 
 void int_to_hex(char *src, unsigned long n)
 {
-  size_t i;
-  for(i = 0; i < 16; i++)
-    src[15 - i] = "0123456789abcdef"[(n >> (i * 4)) & 0xf];
-
-  src[i] = '\0';
+  size_t i, j;
+  int leading_zero = 1;
+  char c;
+  for(i = 0, j = 0; i < 16; i++)
+  {
+    c = "0123456789abcdef"[(n >> (60 - i * 4)) & 0xf];
+    
+    if(c == '0' && leading_zero == 1)
+      continue;
+    else
+      leading_zero = 0;
+    
+    src[j] = c;
+    j++;
+  }
+  
+  src[j] = '\0';
 }
 
 static int parse_flags(char *fmt_str, struct format *fmt)
@@ -142,13 +154,14 @@ void print_conversion(FILE *stream, struct format *fmt, va_list ap)
   {
     case HEX_CONVERSION:
       int_to_hex(res, va_arg(ap, unsigned));
-      write(stream->fd, res, strlen(res));
-      return;
+      goto print;
     case INTEGER_CONVERSION:
       int_to_ascii(res, va_arg(ap, int));
-      write(stream->fd, res, strlen(res));
-      return;
+      goto print;
   }
+
+print:
+  write(stream->fd, res, strlen(res));
 }
 
 static size_t parse_format(char *fmt_str, struct format *fmt)
