@@ -23,6 +23,7 @@ struct format
 {
   uint64_t flags;
   enum conversion conversion;
+  size_t zero_padded_flags_arg;
 };
 
 static void write_char(int fd, char c)
