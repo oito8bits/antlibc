@@ -89,6 +89,30 @@ void int_to_hex(char *src, unsigned long n)
   src[j] = '\0';
 }
 
+int get_number(char *fmt_str, struct format *fmt)
+{
+  size_t ret, i;
+  for(i = 0; fmt_str[i]; i++)
+  {
+    char ch = fmt_str[i];
+    
+    if(ch < '0' || ch > '9')
+      break;  
+    
+    if(!i)
+    {
+      ret = ch - '0';
+      continue;
+    }
+
+    ret = ret * 10 + (ch - '0');
+  }
+
+  fmt->zero_padded_flags_arg = ret;
+  
+  return i;
+}
+
 static int parse_flags(char *fmt_str, struct format *fmt)
 {
   char *fmt_strp = fmt_str;
@@ -103,6 +127,7 @@ static int parse_flags(char *fmt_str, struct format *fmt)
         break;
       case '0':
         fmt->flags |= ZERO_PADDED_FLAGS;
+        fmt_strp += get_number(fmt_str, fmt);
         break;
       case '-':
         fmt->flags |= RIGHT_BLANK_PADDED_FLAGS;
@@ -162,6 +187,18 @@ void print_conversion(FILE *stream, struct format *fmt, va_list ap)
   }
 
 print:
+  if(fmt->flags & ZERO_PADDED_FLAGS)
+  {
+    // TODO: "0x" should also be included in this calculation.
+    int n = fmt->zero_padded_flags_arg - strlen(res);
+    if(n < 0)
+      n = -n;
+    
+    size_t i;
+    for(i = 0; i < n; i++)
+      write_char(stream->fd, '0');
+  }
+
   write(stream->fd, res, strlen(res));
 }
 
