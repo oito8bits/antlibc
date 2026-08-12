@@ -10,6 +10,11 @@
 #define BLANK_POSITIVE_SIGN_FLAGS BIT_POS(3)
 #define SIGNED_NUMBER_FLAGS BIT_POS(4)
 
+enum len_mod
+{
+  LONG_LEN_MOD = 1
+};
+
 enum conversion
 {
   INTEGER_CONVERSION,
@@ -22,6 +27,7 @@ enum conversion
 struct format
 {
   uint64_t flags;
+  enum len_mod len_mod;
   enum conversion conversion;
   size_t zero_padded_flags_arg;
 };
@@ -34,7 +40,7 @@ static void write_char(int fd, char c)
   write(fd, &ch, 1); 
 }
 
-void strrev(char *str)
+void string_reverse(char *str)
 {
   char *str_end = str + strlen(str) - 1;
   char ch;
@@ -65,7 +71,7 @@ void int_to_ascii(char *src, unsigned long n)
 
   *str = '\0';
 
- strrev(src);
+ string_reverse(src);
 }
 
 void int_to_hex(char *src, unsigned long n)
@@ -110,7 +116,7 @@ int get_number(char *fmt_str, struct format *fmt)
 
   fmt->zero_padded_flags_arg = ret;
   
-  return i;
+  return i - 1;
 }
 
 static int parse_flags(char *fmt_str, struct format *fmt)
@@ -144,6 +150,9 @@ static int parse_flags(char *fmt_str, struct format *fmt)
       case 'x':
         fmt->conversion = HEX_CONVERSION;
         goto end;
+      case 'l':
+        fmt->len_mod = LONG_LEN_MOD;
+        break;
       default:
         goto end;
     } 
@@ -151,11 +160,6 @@ static int parse_flags(char *fmt_str, struct format *fmt)
 
 end:
   return fmt_strp - fmt_str;
-}
-
-static int parse_len_mod(char *fmt_str, struct format *fmt)
-{
-  return 0;
 }
 
 void print_flags(FILE *stream, struct format *fmt)
@@ -176,29 +180,41 @@ void print_flags(FILE *stream, struct format *fmt)
 void print_conversion(FILE *stream, struct format *fmt, va_list ap)
 {
   char res[22];
+  
+  unsigned long arg;
+  switch(fmt->len_mod)
+  {
+    case LONG_LEN_MOD:
+      arg = va_arg(ap, unsigned long);
+      break;
+    default:
+      arg = va_arg(ap, unsigned);
+      break;
+  }
+  
   switch(fmt->conversion)
   {
     case HEX_CONVERSION:
-      int_to_hex(res, va_arg(ap, unsigned));
-      goto print;
+      int_to_hex(res, arg);
+      break;
     case INTEGER_CONVERSION:
-      int_to_ascii(res, va_arg(ap, int));
-      goto print;
+      int_to_ascii(res, arg);
+      break;
   }
 
-print:
   if(fmt->flags & ZERO_PADDED_FLAGS)
   {
     // TODO: "0x" should also be included in this calculation.
     int n = fmt->zero_padded_flags_arg - strlen(res);
     if(n < 0)
-      n = -n;
+        goto print;
     
     size_t i;
     for(i = 0; i < n; i++)
       write_char(stream->fd, '0');
   }
 
+print:
   write(stream->fd, res, strlen(res));
 }
 
