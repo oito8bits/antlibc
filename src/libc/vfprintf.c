@@ -18,6 +18,7 @@ enum len_mod
 enum conversion
 {
   INTEGER_CONVERSION,
+  STRING_CONVERSION,
   DECIMAL_CONVERSION,
   FLOAT_CONVERSION,
   HEX_CONVERSION,
@@ -40,7 +41,7 @@ static void write_char(int fd, char c)
   write(fd, &ch, 1); 
 }
 
-void string_reverse(char *str)
+static void string_reverse(char *str)
 {
   char *str_end = str + strlen(str) - 1;
   char ch;
@@ -52,7 +53,7 @@ void string_reverse(char *str)
   }
 }
 
-void int_to_ascii(char *src, unsigned long n)
+static void int_to_ascii(char *src, unsigned long n)
 {
   char *str = src;
 
@@ -74,7 +75,7 @@ void int_to_ascii(char *src, unsigned long n)
  string_reverse(src);
 }
 
-void int_to_hex(char *src, unsigned long n)
+static void int_to_hex(char *src, unsigned long n)
 {
   size_t i, j;
   int leading_zero = 1;
@@ -95,7 +96,7 @@ void int_to_hex(char *src, unsigned long n)
   src[j] = '\0';
 }
 
-int get_number(char *fmt_str, struct format *fmt)
+static int get_number(char *fmt_str, struct format *fmt)
 {
   size_t ret, i;
   for(i = 0; fmt_str[i]; i++)
@@ -150,6 +151,9 @@ static int parse_flags(char *fmt_str, struct format *fmt)
       case 'x':
         fmt->conversion = HEX_CONVERSION;
         goto end;
+      case 's':
+        fmt->conversion = STRING_CONVERSION;
+        goto end;
       case 'l':
         fmt->len_mod = LONG_LEN_MOD;
         break;
@@ -162,7 +166,7 @@ end:
   return fmt_strp - fmt_str;
 }
 
-void print_flags(FILE *stream, struct format *fmt)
+static void print_flags(FILE *stream, struct format *fmt)
 {
   uint8_t flags = fmt->flags;
   size_t i;
@@ -177,28 +181,35 @@ void print_flags(FILE *stream, struct format *fmt)
   }
 }
 
-void print_conversion(FILE *stream, struct format *fmt, va_list ap)
+static unsigned long get_arg(struct format *fmt, va_list ap)
 {
-  char res[22];
-  
   unsigned long arg;
   switch(fmt->len_mod)
   {
     case LONG_LEN_MOD:
       arg = va_arg(ap, unsigned long);
-      break;
+      return arg;
     default:
       arg = va_arg(ap, unsigned);
-      break;
+      return arg;
   }
-  
+}
+
+static void print_conversion(FILE *stream, struct format *fmt, va_list ap)
+{
+  char buf[22];
+  char *res = buf;
+   
   switch(fmt->conversion)
   {
     case HEX_CONVERSION:
-      int_to_hex(res, arg);
+      int_to_hex(res, get_arg(fmt, ap));
       break;
     case INTEGER_CONVERSION:
-      int_to_ascii(res, arg);
+      int_to_ascii(res, get_arg(fmt, ap));
+      break;
+    case STRING_CONVERSION:
+      res = va_arg(ap, char *);
       break;
   }
 
